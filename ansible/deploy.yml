@@ -1,15 +1,10 @@
 - name: Bastion 서버에 Nginx 설치 및 설정
   hosts: bastion
   become: yes
-  vars:
-    domain: "{{ lookup('env', 'DOMAIN') }}"
   tasks:
-    - name: Nginx 및 certbot 설치
+    - name: Nginx 설치
       apt:
-        name:
-          - nginx
-          - certbot
-          - python3-certbot-nginx
+        name: nginx
         state: present
         update_cache: yes
 
@@ -26,11 +21,6 @@
         dest: /etc/nginx/sites-enabled/parcel
         state: link
         force: yes
-
-    - name: Certbot SSL 인증서 발급
-      shell: |
-        certbot --nginx --non-interactive --agree-tos \
-        -m your@email.com -d {{ domain }}
 
   handlers:
     - name: Reload nginx
