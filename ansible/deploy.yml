@@ -3,7 +3,7 @@
   become: yes
   tasks:
     - name: Nginx 설치
-      apt:
+      yum:
         name: nginx
         state: present
         update_cache: yes
@@ -11,16 +11,14 @@
     - name: Nginx 설정 파일 복사
       template:
         src: nginx.conf.j2
-        dest: /etc/nginx/sites-available/parcel
+        dest: /etc/nginx/conf.d/parcel.conf
         mode: '0644'
       notify: Reload nginx
 
-    - name: 심볼릭 링크 설정
+    - name: 기존 기본 설정 제거 (기본 설정 충돌 방지)
       file:
-        src: /etc/nginx/sites-available/parcel
-        dest: /etc/nginx/sites-enabled/parcel
-        state: link
-        force: yes
+        path: /etc/nginx/conf.d/default.conf
+        state: absent
 
   handlers:
     - name: Reload nginx
@@ -34,9 +32,11 @@
   hosts: web-node
   become: yes
   tasks:
-    - name: node, npm 설치
-      apt:
-        name: [nodejs, npm]
+    - name: nodejs 및 npm 설치
+      yum:
+        name:
+          - nodejs
+          - npm
         state: present
         update_cache: yes
 
@@ -50,8 +50,8 @@
       copy:
         src: /home/ec2-user/app/web_was/frontend/build/
         dest: /var/www/frontend/
-        owner: www-data
-        group: www-data
+        owner: nginx
+        group: nginx
         mode: '0755'
         remote_src: yes
 
@@ -61,9 +61,12 @@
   hosts: was-node
   become: yes
   tasks:
-    - name: node, npm, git 설치
-      apt:
-        name: [nodejs, npm, git]
+    - name: nodejs, npm, git 설치
+      yum:
+        name:
+          - nodejs
+          - npm
+          - git
         state: present
         update_cache: yes
 
