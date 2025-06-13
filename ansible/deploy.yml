@@ -1,56 +1,66 @@
-- name: Web 프론트엔드 설치 및 빌드
-  hosts: web
-  become: yes
+- name: Bastion 서버에 Nginx + certbot 설치
+  hosts: bastion
+  become: true
   tasks:
-    - name: Install dependencies
+    - name: Install nginx and certbot
       apt:
-        name: "{{ item }}"
+        name: [nginx, certbot, python3-certbot-nginx]
         state: present
         update_cache: yes
-      loop: [nodejs, npm, git]
 
-    - name: Clone GitHub Repo
-      git:
-        repo: https://github.com/woo0407/Parcel-Tracking-System.git
-        dest: /home/ubuntu/app
+    - name: Copy Nginx config
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/sites-available/parcel
+      notify: Reload Nginx
+
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/parcel
+        dest: /etc/nginx/sites-enabled/parcel
+        state: link
+        force: yes
+
+    - name: Get SSL certificate
+      shell: certbot --nginx --non-interactive --agree-tos -m your@email.com -d {{ domain }}
+
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
+
+- name: 프론트엔드 배포
+  hosts: web
+  become: true
+  tasks:
+    - name: Install nodejs, npm
+      apt: name={{ item }} state=present
+      loop: [nodejs, npm]
 
     - name: Build frontend
       shell: |
         cd /home/ubuntu/app/web_was/frontend
         npm install
         npm run build
+        mkdir -p /var/www/frontend
+        cp -r build/* /var/www/frontend/
 
-- name: 백엔드 서버 설치 및 PM2 실행
+- name: 백엔드 배포
   hosts: was
-  become: yes
+  become: true
   tasks:
-    - name: Install dependencies
-      apt:
-        name: "{{ item }}"
-        state: present
-        update_cache: yes
-      loop: [nodejs, npm, git]
-
-    - name: Install PM2
+    - name: Install nodejs, npm, pm2
+      apt: name={{ item }} state=present
+      loop: [nodejs, npm]
+    - name: Install pm2
       npm:
         name: pm2
         global: yes
 
-    - name: Clone GitHub Repo
-      git:
-        repo: https://github.com/woo0407/Parcel-Tracking-System.git
-        dest: /home/ubuntu/app
-
-    - name: Deploy Firebase key (수동 추가 필요)
-      copy:
-        src: files/firebase-service-key.json
-        dest: /home/ubuntu/app/web_was/backend/firebase-service-key.json
-        mode: '0600'
-
-    - name: Run backend with PM2
+    - name: Deploy and run
       shell: |
         cd /home/ubuntu/app/web_was/backend
         npm install
-        pm2 start server.js --name parcel-backend
+        pm2 start server.js --name backend
         pm2 save
-        pm2 startup systemd
