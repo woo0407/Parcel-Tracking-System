@@ -1,4 +1,4 @@
-name: Auto Deploy with Ansible
+name: Full Deploy with Bastion Proxy
 
 on:
   push:
@@ -9,16 +9,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup SSH key
+    - name: Set up SSH config with ProxyJump
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
-        ssh-keyscan ${{ secrets.WEB_HOST }} >> ~/.ssh/known_hosts
-        ssh-keyscan ${{ secrets.WAS_HOST }} >> ~/.ssh/known_hosts
+
+        cat <<EOF > ~/.ssh/config
+Host bastion
+  HostName 52.78.xxx.xxx
+  User ubuntu
+  IdentityFile ~/.ssh/seoul.key
+
+Host web
+  HostName 10.0.1.10
+  User ubuntu
+  ProxyJump bastion
+  IdentityFile ~/.ssh/seoul.key
+
+Host was
+  HostName 10.0.1.11
+  User ubuntu
+  ProxyJump bastion
+  IdentityFile ~/.ssh/seoul.key
+EOF
 
     - name: Install Ansible
       run: |
@@ -29,6 +46,6 @@ jobs:
     - name: Run Ansible Playbook
       run: |
         cd ansible
-        ansible-playbook -i inventory.ini deploy.yml --private-key ~/.ssh/seoul.key
+        ansible-playbook -i inventory.ini deploy.yml
       env:
         ANSIBLE_HOST_KEY_CHECKING: False
