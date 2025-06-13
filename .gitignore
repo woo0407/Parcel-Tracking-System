@@ -1,5 +1,6 @@
-web_was/frontend/node_modules/
-web_was/frontend/.cache/
-web_was/backend/node_modules/
-*.log
-*.env
+node_modules/
+.cache/
+.env
+firebase-service-key.json
+web_was/backend/firebase-service-key.json
+ansible/files/firebase-service-key.json
