@@ -19,23 +19,26 @@ jobs:
         chmod 600 ~/.ssh/seoul.key
 
         cat <<EOF > ~/.ssh/config
-Host bastion
-  HostName 52.78.xxx.xxx
-  User ubuntu
-  IdentityFile ~/.ssh/seoul.key
+        Host bastion
+          HostName 52.78.189.247
+          User ubuntu
+          IdentityFile ~/.ssh/seoul.key
 
-Host web
-  HostName 10.0.1.10
-  User ubuntu
-  ProxyJump bastion
-  IdentityFile ~/.ssh/seoul.key
+        Host web
+          HostName 10.0.1.10
+          User ubuntu
+          ProxyJump bastion
+          IdentityFile ~/.ssh/seoul.key
 
-Host was
-  HostName 10.0.1.11
-  User ubuntu
-  ProxyJump bastion
-  IdentityFile ~/.ssh/seoul.key
-EOF
+        Host was
+          HostName 10.0.1.11
+          User ubuntu
+          ProxyJump bastion
+          IdentityFile ~/.ssh/seoul.key
+        EOF
+
+        chmod 600 ~/.ssh/config
+        ssh-keyscan 52.78.189.247 >> ~/.ssh/known_hosts
 
     - name: Install Ansible
       run: |
