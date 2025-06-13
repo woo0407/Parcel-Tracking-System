@@ -1,4 +1,4 @@
-name: Full Deploy with Bastion Proxy
+name: Full Deploy with Bastion Proxy (Stable with ProxyCommand)
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up SSH config with ProxyJump
+    - name: Set up SSH config with ProxyCommand
       run: |
         mkdir -p ~/.ssh
 
@@ -20,7 +20,7 @@ jobs:
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
 
-        # 2. SSH config 작성
+        # 2. SSH config 작성 (ProxyCommand 방식)
         cat <<EOF > ~/.ssh/config
         Host bastion-node
           HostName 52.78.189.247
@@ -30,18 +30,22 @@ jobs:
         Host web-node
           HostName 10.30.3.35
           User ec2-user
-          ProxyJump bastion-node
           IdentityFile ~/.ssh/seoul.key
+          ProxyCommand ssh -i ~/.ssh/seoul.key -o StrictHostKeyChecking=no ec2-user@52.78.189.247 -W %h:%p
 
         Host was-node
           HostName 10.30.5.139
           User ec2-user
-          ProxyJump bastion-node
           IdentityFile ~/.ssh/seoul.key
+          ProxyCommand ssh -i ~/.ssh/seoul.key -o StrictHostKeyChecking=no ec2-user@52.78.189.247 -W %h:%p
         EOF
 
         chmod 600 ~/.ssh/config
         ssh-keyscan 52.78.189.247 >> ~/.ssh/known_hosts
+
+    - name: Test SSH connectivity to web-node
+      run: |
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no web-node "echo '✅ Web-node SSH 연결 성공'"
 
     - name: Install Ansible
       run: |
