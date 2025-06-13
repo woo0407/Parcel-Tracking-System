@@ -15,9 +15,14 @@ jobs:
     - name: Set up SSH config with ProxyJump
       run: |
         mkdir -p ~/.ssh
+
+        # SSH 키 저장 및 등록
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/seoul.key
 
+        # SSH config 설정
         cat <<EOF > ~/.ssh/config
         Host bastion
           HostName 52.78.189.247
