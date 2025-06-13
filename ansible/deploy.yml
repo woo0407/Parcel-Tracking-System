@@ -1,66 +1,97 @@
-- name: Bastion 서버에 Nginx + certbot 설치
+- name: Bastion 서버에 Nginx 설치 및 설정
   hosts: bastion
-  become: true
+  become: yes
+  vars:
+    domain: "{{ lookup('env', 'DOMAIN') }}"
   tasks:
-    - name: Install nginx and certbot
+    - name: Nginx 및 certbot 설치
       apt:
-        name: [nginx, certbot, python3-certbot-nginx]
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
         state: present
         update_cache: yes
 
-    - name: Copy Nginx config
+    - name: Nginx 설정 파일 복사
       template:
         src: nginx.conf.j2
         dest: /etc/nginx/sites-available/parcel
-      notify: Reload Nginx
+        mode: '0644'
+      notify: Reload nginx
 
-    - name: Enable Nginx site
+    - name: 심볼릭 링크 설정
       file:
         src: /etc/nginx/sites-available/parcel
         dest: /etc/nginx/sites-enabled/parcel
         state: link
         force: yes
 
-    - name: Get SSL certificate
-      shell: certbot --nginx --non-interactive --agree-tos -m your@email.com -d {{ domain }}
+    - name: Certbot SSL 인증서 발급
+      shell: |
+        certbot --nginx --non-interactive --agree-tos \
+        -m your@email.com -d {{ domain }}
 
   handlers:
-    - name: Reload Nginx
+    - name: Reload nginx
       service:
         name: nginx
-        state: reloaded
+        state: restarted
 
-- name: 프론트엔드 배포
+# ----------------------------
+
+- name: 프론트엔드 배포 (React 등)
   hosts: web
-  become: true
+  become: yes
   tasks:
-    - name: Install nodejs, npm
-      apt: name={{ item }} state=present
-      loop: [nodejs, npm]
+    - name: node, npm 설치
+      apt:
+        name: [nodejs, npm]
+        state: present
+        update_cache: yes
 
-    - name: Build frontend
+    - name: 프론트 빌드 실행
       shell: |
         cd /home/ubuntu/app/web_was/frontend
         npm install
         npm run build
-        mkdir -p /var/www/frontend
-        cp -r build/* /var/www/frontend/
 
-- name: 백엔드 배포
+    - name: 빌드 결과 /var/www 배포
+      copy:
+        src: /home/ubuntu/app/web_was/frontend/build/
+        dest: /var/www/frontend/
+        owner: www-data
+        group: www-data
+        mode: '0755'
+        remote_src: yes
+
+# ----------------------------
+
+- name: 백엔드 서버 배포 및 PM2 실행
   hosts: was
-  become: true
+  become: yes
   tasks:
-    - name: Install nodejs, npm, pm2
-      apt: name={{ item }} state=present
-      loop: [nodejs, npm]
-    - name: Install pm2
+    - name: node, npm, git 설치
+      apt:
+        name: [nodejs, npm, git]
+        state: present
+        update_cache: yes
+
+    - name: pm2 설치
       npm:
         name: pm2
         global: yes
 
-    - name: Deploy and run
+    - name: firebase key 복사
+      copy:
+        src: files/firebase-service-key.json
+        dest: /home/ubuntu/app/web_was/backend/firebase-service-key.json
+        mode: '0600'
+
+    - name: 백엔드 실행
       shell: |
         cd /home/ubuntu/app/web_was/backend
         npm install
         pm2 start server.js --name backend
         pm2 save
+        pm2 startup systemd
