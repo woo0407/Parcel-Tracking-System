@@ -42,13 +42,13 @@
 
     - name: 프론트 빌드 실행
       shell: |
-        cd /home/ubuntu/app/web_was/frontend
+        cd /home/ec2-user/app/web_was/frontend
         npm install
         npm run build
 
     - name: 빌드 결과 /var/www 배포
       copy:
-        src: /home/ubuntu/app/web_was/frontend/build/
+        src: /home/ec2-user/app/web_was/frontend/build/
         dest: /var/www/frontend/
         owner: www-data
         group: www-data
@@ -75,12 +75,12 @@
     - name: firebase key 복사
       copy:
         src: files/firebase-service-key.json
-        dest: /home/ubuntu/app/web_was/backend/firebase-service-key.json
+        dest: /home/ec2-user/app/web_was/backend/firebase-service-key.json
         mode: '0600'
 
     - name: 백엔드 실행
       shell: |
-        cd /home/ubuntu/app/web_was/backend
+        cd /home/ec2-user/app/web_was/backend
         npm install
         pm2 start server.js --name backend
         pm2 save
