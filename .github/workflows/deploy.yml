@@ -16,7 +16,7 @@ jobs:
       run: |
         mkdir -p ~/.ssh
 
-        # SSH 키 저장 및 등록
+        # SSH 키 등록
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
         eval "$(ssh-agent -s)"
@@ -24,21 +24,21 @@ jobs:
 
         # SSH config 설정
         cat <<EOF > ~/.ssh/config
-        Host bastion
+        Host bastion-node
           HostName 52.78.189.247
           User ubuntu
           IdentityFile ~/.ssh/seoul.key
 
-        Host web
+        Host web-node
           HostName 10.0.1.10
           User ubuntu
-          ProxyJump bastion
+          ProxyJump bastion-node
           IdentityFile ~/.ssh/seoul.key
 
-        Host was
+        Host was-node
           HostName 10.0.1.11
           User ubuntu
-          ProxyJump bastion
+          ProxyJump bastion-node
           IdentityFile ~/.ssh/seoul.key
         EOF
 
