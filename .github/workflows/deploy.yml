@@ -1,4 +1,4 @@
-name: Full Deploy with Bastion Proxy (Stable with ProxyCommand)
+name: Full Deploy with Bastion Proxy (ProxyCommand 안정화)
 
 on:
   push:
@@ -16,11 +16,9 @@ jobs:
       run: |
         mkdir -p ~/.ssh
 
-        # 1. SSH 키 저장
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
 
-        # 2. SSH config 작성 (ProxyCommand 방식)
         cat <<EOF > ~/.ssh/config
         Host bastion-node
           HostName 52.78.189.247
@@ -43,7 +41,7 @@ jobs:
         chmod 600 ~/.ssh/config
         ssh-keyscan 52.78.189.247 >> ~/.ssh/known_hosts
 
-    - name: Test SSH connectivity to web-node
+    - name: Test SSH to web-node via ProxyCommand
       run: |
         ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no web-node "echo '✅ Web-node SSH 연결 성공'"
 
