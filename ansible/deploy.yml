@@ -1,6 +1,8 @@
 - name: Bastion 서버에 Nginx 설치 및 설정
   hosts: bastion-node
   become: yes
+  vars:
+    domain: example.com
   tasks:
     - name: Nginx 설치
       yum:
@@ -15,7 +17,7 @@
         mode: '0644'
       notify: Reload nginx
 
-    - name: 기존 기본 설정 제거 (기본 설정 충돌 방지)
+    - name: 기존 기본 설정 제거
       file:
         path: /etc/nginx/conf.d/default.conf
         state: absent
