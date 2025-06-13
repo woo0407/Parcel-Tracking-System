@@ -16,13 +16,11 @@ jobs:
       run: |
         mkdir -p ~/.ssh
 
-        # SSH 키 등록
+        # 1. SSH 키 저장
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
-        eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/seoul.key
 
-        # SSH config 설정
+        # 2. SSH 설정 파일 작성
         cat <<EOF > ~/.ssh/config
         Host bastion-node
           HostName 52.78.189.247
@@ -43,6 +41,8 @@ jobs:
         EOF
 
         chmod 600 ~/.ssh/config
+
+        # 3. SSH 호스트 키 사전 등록 (호스트 키 검증 피하기)
         ssh-keyscan 52.78.189.247 >> ~/.ssh/known_hosts
 
     - name: Install Ansible
@@ -54,6 +54,6 @@ jobs:
     - name: Run Ansible Playbook
       run: |
         cd ansible
-        ansible-playbook -i inventory.ini deploy.yml
+        ansible-playbook -i inventory.ini deploy.yml --private-key=~/.ssh/seoul.key
       env:
         ANSIBLE_HOST_KEY_CHECKING: False
