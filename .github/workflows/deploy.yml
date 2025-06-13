@@ -16,11 +16,11 @@ jobs:
       run: |
         mkdir -p ~/.ssh
 
-        # 1. SSH 키 저장
+        # 1. SSH 키 저장 (Secrets에서 불러옴)
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/seoul.key
         chmod 600 ~/.ssh/seoul.key
 
-        # 2. SSH 설정 파일 작성
+        # 2. SSH config 작성
         cat <<EOF > ~/.ssh/config
         Host bastion-node
           HostName 52.78.189.247
@@ -28,13 +28,13 @@ jobs:
           IdentityFile ~/.ssh/seoul.key
 
         Host web-node
-          HostName 10.0.1.10
+          HostName 10.30.3.35
           User ubuntu
           ProxyJump bastion-node
           IdentityFile ~/.ssh/seoul.key
 
         Host was-node
-          HostName 10.0.1.11
+          HostName 10.30.5.139
           User ubuntu
           ProxyJump bastion-node
           IdentityFile ~/.ssh/seoul.key
@@ -42,7 +42,7 @@ jobs:
 
         chmod 600 ~/.ssh/config
 
-        # 3. SSH 호스트 키 사전 등록 (호스트 키 검증 피하기)
+        # 3. SSH 호스트 키 등록
         ssh-keyscan 52.78.189.247 >> ~/.ssh/known_hosts
 
     - name: Install Ansible
