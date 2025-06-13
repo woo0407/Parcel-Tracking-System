@@ -1,5 +1,5 @@
 - name: Bastion 서버에 Nginx 설치 및 설정
-  hosts: bastion
+  hosts: bastion-node
   become: yes
   tasks:
     - name: Nginx 설치
@@ -31,7 +31,7 @@
 # ----------------------------
 
 - name: 프론트엔드 배포 (React 등)
-  hosts: web
+  hosts: web-node
   become: yes
   tasks:
     - name: node, npm 설치
@@ -58,7 +58,7 @@
 # ----------------------------
 
 - name: 백엔드 서버 배포 및 PM2 실행
-  hosts: was
+  hosts: was-node
   become: yes
   tasks:
     - name: node, npm, git 설치
