@@ -1,1 +1,6 @@
-parcel-tracking-system.zip
+# 공통 무시 디렉토리
+web_was/frontend/node_modules/
+web_was/frontend/.cache/
+web_was/backend/node_modules/
+*.log
+*.env
