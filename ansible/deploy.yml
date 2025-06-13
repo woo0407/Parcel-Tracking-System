@@ -1,0 +1,56 @@
+- name: Web 프론트엔드 설치 및 빌드
+  hosts: web
+  become: yes
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop: [nodejs, npm, git]
+
+    - name: Clone GitHub Repo
+      git:
+        repo: https://github.com/woo0407/Parcel-Tracking-System.git
+        dest: /home/ubuntu/app
+
+    - name: Build frontend
+      shell: |
+        cd /home/ubuntu/app/web_was/frontend
+        npm install
+        npm run build
+
+- name: 백엔드 서버 설치 및 PM2 실행
+  hosts: was
+  become: yes
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop: [nodejs, npm, git]
+
+    - name: Install PM2
+      npm:
+        name: pm2
+        global: yes
+
+    - name: Clone GitHub Repo
+      git:
+        repo: https://github.com/woo0407/Parcel-Tracking-System.git
+        dest: /home/ubuntu/app
+
+    - name: Deploy Firebase key (수동 추가 필요)
+      copy:
+        src: files/firebase-service-key.json
+        dest: /home/ubuntu/app/web_was/backend/firebase-service-key.json
+        mode: '0600'
+
+    - name: Run backend with PM2
+      shell: |
+        cd /home/ubuntu/app/web_was/backend
+        npm install
+        pm2 start server.js --name parcel-backend
+        pm2 save
+        pm2 startup systemd
